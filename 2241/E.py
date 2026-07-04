@@ -1,18 +1,23 @@
 # Problem: https://codeforces.com/contest/2241/problem/E
 #
 # Solution:
-# For any three vertices in a tree, either:
-# 1. They are collinear (one lies on the path between the other two):
-#    then p(u,v)*p(v,w)*p(w,u) is always a perfect square.
-# 2. They branch at a median vertex m (m is not one of the three):
-#    then the product equals (product of the three branches)^2 * a_m^3,
-#    so it is a perfect square iff a_m itself is a perfect square.
+# For any three distinct vertices in a tree, there is a unique vertex m
+# that lies on all three pairwise simple paths (the "center" of the triplet).
+# - If the three vertices are collinear, m is the middle vertex.
+# - If they branch, m is the junction vertex (not one of the three).
+#
+# Let the component sizes after removing m be c_1, c_2, ..., c_k.
+# Triplets whose center is m are of two types:
+#   1. {m, x, y} with x, y in two different components: count = sum_{i<j} c_i c_j
+#   2. {x, y, z} with x, y, z in three different components:
+#      count = sum_{i<j<l} c_i c_j c_l
+#
+# For either type, the product p(u,v)*p(v,w)*p(w,u) equals
+# (product of the relevant branch-paths)^2 divided by (or multiplied by) a_m,
+# which is a perfect square iff a_m itself is a perfect square.
 #
 # Therefore:
-# answer = C(n,3) - sum over vertices m with a_m NOT square of branch(m)
-# where branch(m) is the number of triplets whose median is m,
-# i.e. the number of ways to pick one vertex from three different
-# components of the tree after removing m.
+# answer = sum over vertices m with a_m square of (pair_count(m) + triple_count(m))
 
 import math
 import sys
@@ -62,10 +67,9 @@ def solve():
                 if v != parent[u]:
                     subtree[u] += subtree[v]
 
-        total = n * (n - 1) * (n - 2) // 6
-        ans = total
+        ans = 0
         for m in range(1, n + 1):
-            if is_square(a[m]):
+            if not is_square(a[m]):
                 continue
             sizes = []
             for v in adj[m]:
@@ -74,13 +78,16 @@ def solve():
                 else:
                     sizes.append(subtree[v])
             k = len(sizes)
-            if k < 3:
+            if k < 2:
                 continue
             S = sum(sizes)
             S2 = sum(x * x for x in sizes)
-            S3 = sum(x * x * x for x in sizes)
-            branch = (S * S * S - 3 * S * S2 + 2 * S3) // 6
-            ans -= branch
+            pair_count = (S * S - S2) // 2
+            triple_count = 0
+            if k >= 3:
+                S3 = sum(x * x * x for x in sizes)
+                triple_count = (S * S * S - 3 * S * S2 + 2 * S3) // 6
+            ans += pair_count + triple_count
 
         out.append(str(ans))
 
