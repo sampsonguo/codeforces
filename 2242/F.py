@@ -17,6 +17,11 @@
 # is implemented with a persistent implicit treap so that the piece that is
 # needed twice (old[a..2a-1]) can be shared.  The treap is rebuilt from time
 # to time to keep memory usage under control.
+#
+# Following the editorial's advice, the treap uses size-based merging instead
+# of fixed node priorities: when merging two subtrees of sizes sz_l and sz_r,
+# the left root becomes the new root with probability sz_l/(sz_l+sz_r).
+# This avoids storing priorities and works naturally in a persistent setting.
 
 import random
 import sys
@@ -33,14 +38,12 @@ def solve():
     # Persistent implicit treap, stored in parallel arrays.
     # Node 0 is the null node.
     val = [0]
-    prio = [0]
     left = [0]
     right = [0]
     size = [0]
 
-    def new_node(v, p):
+    def new_node(v):
         val.append(v)
-        prio.append(p)
         left.append(0)
         right.append(0)
         size.append(1)
@@ -48,7 +51,6 @@ def solve():
 
     def copy_node(i):
         val.append(val[i])
-        prio.append(prio[i])
         left.append(left[i])
         right.append(right[i])
         size.append(size[i])
@@ -62,7 +64,10 @@ def solve():
             return b_
         if b_ == 0:
             return a_
-        if prio[a_] > prio[b_]:
+        sz_a = size[a_]
+        sz_b = size[b_]
+        # left root wins with probability sz_a / (sz_a + sz_b)
+        if random.random() * (sz_a + sz_b) < sz_a:
             a_ = copy_node(a_)
             right[a_] = merge(right[a_], b_)
             upd(a_)
@@ -93,7 +98,7 @@ def solve():
         if l >= r:
             return 0
         m = (l + r) // 2
-        v = new_node(values[m], random.getrandbits(30))
+        v = new_node(values[m])
         left[v] = build(values, l, m)
         right[v] = build(values, m + 1, r)
         upd(v)
@@ -127,7 +132,6 @@ def solve():
             values = []
             collect(root, values)
             val[:] = [0]
-            prio[:] = [0]
             left[:] = [0]
             right[:] = [0]
             size[:] = [0]
