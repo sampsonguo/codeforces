@@ -18,15 +18,11 @@
 # needed twice (old[a..2a-1]) can be shared.  The treap is rebuilt from time
 # to time to keep memory usage under control.
 #
-# Following the editorial's advice, the treap uses size-based merging instead
-# of fixed node priorities: when merging two subtrees of sizes sz_l and sz_r,
-# the left root becomes the new root with probability sz_l/(sz_l+sz_r).
-# This avoids storing priorities and works naturally in a persistent setting.
+# The treap uses size-based merging: when merging two subtrees of sizes sz_l
+# and sz_r, the left root becomes the new root with probability sz_l/(sz_l+sz_r).
 
 import random
 import sys
-
-sys.setrecursionlimit(1_000_000)
 
 
 def solve():
@@ -66,7 +62,6 @@ def solve():
             return a_
         sz_a = size[a_]
         sz_b = size[b_]
-        # left root wins with probability sz_a / (sz_a + sz_b)
         if random.random() * (sz_a + sz_b) < sz_a:
             a_ = copy_node(a_)
             right[a_] = merge(right[a_], b_)
@@ -131,10 +126,11 @@ def solve():
         if (n - 1 - idx) % REBUILD == REBUILD - 1:
             values = []
             collect(root, values)
-            val[:] = [0]
-            left[:] = [0]
-            right[:] = [0]
-            size[:] = [0]
+            # Replace the whole arrays so the old buffers are freed.
+            val = [0]
+            left = [0]
+            right = [0]
+            size = [0]
             root = build(values, 0, len(values))
 
     sys.stdout.write(" ".join(map(str, ans[::-1])))
