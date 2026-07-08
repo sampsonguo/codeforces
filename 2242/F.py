@@ -109,7 +109,7 @@ def solve():
     root = build(list(range(MX)), 0, MX)
 
     ans = [0] * n
-    REBUILD = 5000
+    REBUILD = 10000
 
     for idx in range(n - 1, -1, -1):
         x = a[idx]
